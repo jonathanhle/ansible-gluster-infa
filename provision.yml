@@ -1,0 +1,6 @@
+---
+ - include: provisioners/digitalocean.yml
+#TODO - include: provisioners/aws.yml
+
+# Configure provisioned servers.
+ - include: configure.yml

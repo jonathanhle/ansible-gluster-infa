@@ -1,0 +1,12 @@
+# Gluster Pool
+[gluster-pool]
+[gluster-server01]
+[gluster-server02]
+[gluster-server03]
+[gluster-server04]
+
+[gluster-pool:children]
+gluster-server01
+gluster-server02
+gluster-server03
+gluster-server04

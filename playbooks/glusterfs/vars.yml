@@ -1,0 +1,31 @@
+---
+firewall_allowed_tcp_ports:
+  - "22"
+  - "80"
+  # For Gluster.
+  - 111
+  - 24007
+  - 24008
+  - 24009
+  - 24010
+  - 24011
+  - 49152
+  - 49153
+  - 49154
+
+firewall_allowed_udp_ports:
+  - 111
+
+# Gluster configuration.
+gluster_brick_dir: /srv/gluster/brick
+gluster_mount_dir: /mnt/gluster
+gluster_brick_name: gluster
+
+# Note: Adjust the replica number based on the number of servers in your requested inventory, 
+# also depending on if you want a Gluster Replicate vs Distributed Replicate: http://www.gluster.org/community/documentation/index.php/Gluster_3.2:_Setting_Up_GlusterFS_Server_Volumes 
+
+gluster_brick_config:
+  "replica 2 transport tcp
+  {% for host in groups['do'] %}
+    {{ hostvars[host].ansible_hostname }}-priv:{{ gluster_brick_dir }}
+  {% endfor %}"

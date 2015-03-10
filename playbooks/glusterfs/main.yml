@@ -1,0 +1,13 @@
+---
+- hosts: gluster-pool 
+  sudo: yes
+
+  vars_files:
+    - vars.yml
+
+  roles:
+    - geerlingguy.firewall
+    - geerlingguy.glusterfs
+
+  tasks:
+    - include: gluster.yml

@@ -1,0 +1,52 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    droplets:
+      - { name: gluster-server01, group: "gluster-pool" }
+      - { name: gluster-server02, group: "gluster-pool" }
+      - { name: gluster-server03, group: "gluster-pool" }
+      - { name: gluster-server04, group: "gluster-pool" }
+
+  tasks:
+    - name: Provision DigitalOcean droplets.
+      digital_ocean:
+        state: "{{ item.state | default('present') }}"
+        command: droplet
+        name: "{{ item.name }}"
+        private_networking: yes
+        size_id: "{{ item.size | default(66) }}" # 512mb
+        image_id: "{{ item.image | default(9801950) }}" # Ubuntu 14 x64.
+        region_id: "{{ item.region | default(4) }}" # NYC
+        ssh_key_ids: "{{ item.ssh_key | default('235280') }}" # jonathan_ssh_key
+        unique_name: yes
+      register: created_droplets
+      with_items: droplets
+
+    - name: Add DigitalOcean hosts to their respective inventory groups.
+      add_host:
+        name: "{{ item.1.droplet.ip_address }}"
+        groups: "do,{{ droplets[item.0].group }},{{ item.1.droplet.name }}"
+        # You can dynamically add inventory variables per-host.
+        ansible_ssh_user: root
+      when: item.1.droplet is defined
+      with_indexed_items: created_droplets.results
+
+- hosts: do
+  remote_user: root
+
+  tasks:
+    - name: Wait for port 22 to become available.
+      local_action: "wait_for port=22 host={{ inventory_hostname }}"
+
+    - name: Adding hosts entries for private networking
+      lineinfile: >
+        state=present
+        dest=/etc/hosts
+        line="{{ hostvars[item].ansible_eth0.ipv4.address }} {{ hostvars[item].ansible_hostname }}-priv # ansible"
+        regexp=".*{{ hostvars[item].ansible_hostname }}-priv" 
+        insertafter=EOF
+      when: hostvars[item].ansible_eth0.ipv4.address is defined 
+      with_items: groups['do']
